@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#070E18">
+<meta name="description" content="Questionario finale del corso di formazione AI.">
+<title>Quiz Formazione AI</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<style>
+/* ============================================================
+   Quiz Formazione AI — identità ripresa dal deck (slides.css)
+   Design a tema unico (dark): l'app vive accanto alle slide
+   proiettate in aula, quindi non segue il tema del visualizzatore.
+   ============================================================ */
+:root {
+  --ground:   #070E18;
+  --navy:     #0D1B2A;
+  --surface:  #102338;
+  --surface-2:#16304C;
+  --line:     rgba(120,170,205,.20);
+  --line-soft:rgba(120,170,205,.11);
+  --text:     #EAF4FE;
+  --body:     #C2D8EC;
+  --muted:    #7FA6C0;
+  --dim:      #5C7F98;
+  --accent:   #00C8F0;
+  --ok:       #5DD49A;
+  --err:      #FF8695;
+  --warn:     #F4A261;
+  --mono:     'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  --serif:    'DM Serif Display', Georgia, 'Times New Roman', serif;
+  --sans:     'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  --pad:      clamp(18px, 5vw, 30px);
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--ground);
+  color: var(--body);
+  font-family: var(--sans);
+  font-size: 16px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -webkit-text-size-adjust: 100%;
+  min-height: 100vh;
+}
+body::before {
+  content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 0;
+  background:
+    radial-gradient(circle at 10% 6%,  rgba(0,200,240,.13), transparent 34%),
+    radial-gradient(circle at 92% 88%, rgba(93,212,154,.09), transparent 32%);
+}
+button { font: inherit; color: inherit; }
+
+/* ---------- impalcatura ---------- */
+.shell {
+  position: relative; z-index: 1;
+  width: min(100%, 660px);
+  margin-inline: auto;
+  padding: 0 var(--pad);
+  display: flex; flex-direction: column;
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+.eyebrow {
+  font: 500 10.5px/1 var(--mono);
+  letter-spacing: .16em; text-transform: uppercase;
+  color: var(--dim);
+}
+.rule { height: 1px; background: var(--line-soft); border: 0; margin: 0; }
+
+/* ---------- schermata iniziale ---------- */
+/* flex-start, non center: su schermi bassi il contenuto supera il viewport
+   e un contenitore flex centrato renderebbe irraggiungibile la parte alta. */
+.intro {
+  flex: 1; display: flex; flex-direction: column; justify-content: flex-start;
+  gap: clamp(18px, 3.4vh, 26px); padding: clamp(26px, 5vh, 44px) 0 40px;
+}
+.intro-mark {
+  display: inline-flex; align-items: center; gap: 9px;
+  align-self: flex-start;
+  font: 500 10.5px/1 var(--mono); letter-spacing: .16em; text-transform: uppercase;
+  color: var(--accent);
+  border: 1px solid rgba(0,200,240,.34); background: rgba(0,200,240,.07);
+  border-radius: 5px; padding: 8px 12px;
+}
+.intro-mark::before {
+  content: ""; width: 6px; height: 6px; border-radius: 50%;
+  background: var(--accent); box-shadow: 0 0 9px var(--accent);
+}
+.intro h1 {
+  font-family: var(--serif); font-weight: 400;
+  font-size: clamp(38px, 11vw, 62px); line-height: 1.02;
+  color: var(--text); margin: 0; text-wrap: balance;
+}
+.intro h1 em { font-style: italic; color: var(--accent); }
+.intro p.lead {
+  margin: 0; max-width: 46ch; color: var(--muted);
+  font-size: clamp(15px, 4vw, 17px);
+}
+
+.meta-row { display: flex; gap: 10px; flex-wrap: wrap; }
+.meta-chip {
+  display: flex; flex-direction: column; gap: 4px;
+  padding: 11px 15px; border-radius: 10px;
+  background: rgba(22,48,76,.5); border: 1px solid var(--line-soft);
+  flex: 1 1 0; min-width: 92px;
+}
+.meta-chip b {
+  font-family: var(--serif); font-weight: 400; font-size: 22px;
+  color: var(--text); line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.meta-chip span {
+  font: 400 10px/1.2 var(--mono); letter-spacing: .1em;
+  text-transform: uppercase; color: var(--dim);
+}
+
+/* ---------- campi ---------- */
+.fields { display: flex; flex-direction: column; gap: 13px; }
+.field { display: flex; flex-direction: column; gap: 7px; }
+.field label {
+  font: 500 10.5px/1 var(--mono); letter-spacing: .13em;
+  text-transform: uppercase; color: var(--muted);
+}
+.field input {
+  font-family: var(--sans); font-size: 17px; color: var(--text);
+  background: rgba(13,27,42,.85);
+  border: 1px solid var(--line);
+  border-radius: 10px; padding: 14px 15px;
+  width: 100%; outline: none;
+  transition: border-color .18s, box-shadow .18s;
+}
+.field input::placeholder { color: #4E7089; }
+.field input:focus-visible {
+  border-color: rgba(0,200,240,.72);
+  box-shadow: 0 0 0 3px rgba(0,200,240,.15);
+}
+.field-error {
+  font: 400 12.5px/1.4 var(--sans); color: var(--warn); min-height: 0;
+}
+
+/* ---------- pulsanti ---------- */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 9px;
+  border-radius: 10px; padding: 15px 22px;
+  font-size: 15.5px; font-weight: 500; letter-spacing: .01em;
+  border: 1px solid transparent; cursor: pointer;
+  transition: background-color .18s, border-color .18s, color .18s, opacity .18s, transform .12s;
+  -webkit-tap-highlight-color: transparent;
+}
+.btn:active { transform: translateY(1px); }
+.btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.btn-primary {
+  background: var(--accent); color: #04222C; font-weight: 700;
+  border-color: var(--accent);
+}
+.btn-primary:hover:not(:disabled) { background: #3FD8F7; border-color: #3FD8F7; }
+.btn-primary:disabled { opacity: .3; cursor: not-allowed; }
+.btn-ghost {
+  background: transparent; color: var(--muted); border-color: var(--line);
+}
+.btn-ghost:hover:not(:disabled) { color: var(--text); border-color: rgba(0,200,240,.5); }
+.btn-ghost:disabled { opacity: .28; cursor: not-allowed; }
+.btn-wide { width: 100%; }
+
+/* ---------- testata quiz ---------- */
+.topbar {
+  position: sticky; top: 0; z-index: 5;
+  background: linear-gradient(to bottom, var(--ground) 68%, rgba(7,14,24,0));
+  padding: 16px 0 14px;
+  display: flex; flex-direction: column; gap: 11px;
+}
+.topbar-line { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.kind {
+  font: 500 10px/1 var(--mono); letter-spacing: .13em; text-transform: uppercase;
+  color: var(--accent); border: 1px solid rgba(0,200,240,.32);
+  background: rgba(0,200,240,.07); border-radius: 5px; padding: 6px 10px;
+  white-space: nowrap;
+}
+.count {
+  font: 500 11.5px/1 var(--mono); letter-spacing: .09em; color: var(--dim);
+  font-variant-numeric: tabular-nums;
+}
+.count b { color: var(--text); font-weight: 500; }
+.track { height: 3px; border-radius: 2px; background: rgba(120,170,205,.15); overflow: hidden; }
+.track-fill {
+  height: 100%; width: 0; border-radius: 2px;
+  background: linear-gradient(90deg, var(--accent), #5DD4E8);
+  transition: width .38s cubic-bezier(.4,0,.2,1);
+}
+
+/* ---------- domanda ---------- */
+.qbody {
+  flex: 1; display: flex; flex-direction: column; gap: 20px;
+  padding: 10px 0 26px;
+}
+.question {
+  font-family: var(--serif); font-weight: 400;
+  font-size: clamp(23px, 6.2vw, 31px); line-height: 1.17;
+  color: var(--text); margin: 0; text-wrap: balance;
+}
+.hint {
+  font: 400 12px/1.4 var(--mono); color: var(--muted); margin: -8px 0 0;
+}
+.options { display: flex; flex-direction: column; gap: 9px; }
+.opt {
+  display: flex; align-items: center; gap: 13px; width: 100%; text-align: left;
+  padding: 15px 16px; border-radius: 11px;
+  background: rgba(22,48,76,.46);
+  border: 1px solid var(--line-soft);
+  color: var(--body); font-size: 15.5px; line-height: 1.36;
+  cursor: pointer; -webkit-tap-highlight-color: transparent;
+  transition: background-color .16s, border-color .16s, color .16s;
+}
+.opt:hover { border-color: rgba(120,170,205,.34); }
+.opt:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.opt .letter {
+  flex: 0 0 30px; width: 30px; height: 30px; border-radius: 50%;
+  display: grid; place-items: center;
+  font: 500 12px/1 var(--mono); color: var(--muted);
+  background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.10);
+  transition: background-color .16s, color .16s, border-color .16s;
+}
+.opt[aria-pressed="true"] {
+  background: rgba(0,200,240,.11);
+  border-color: rgba(0,200,240,.62);
+  color: var(--text);
+}
+.opt[aria-pressed="true"] .letter {
+  background: var(--accent); color: #04222C; border-color: var(--accent); font-weight: 500;
+}
+
+/* ---------- barra azioni ---------- */
+.actions {
+  position: sticky; bottom: 0; z-index: 5;
+  display: flex; gap: 10px;
+  padding: 14px 0 calc(16px + env(safe-area-inset-bottom));
+  background: linear-gradient(to top, var(--ground) 72%, rgba(7,14,24,0));
+}
+.actions .btn-primary { flex: 1; }
+
+/* ---------- risultato ---------- */
+.result { flex: 1; display: flex; flex-direction: column; gap: 24px; padding: 30px 0 34px; }
+.score-card {
+  display: flex; align-items: center; gap: clamp(16px, 5vw, 26px);
+  padding: clamp(18px, 5vw, 26px); border-radius: 15px;
+  background: linear-gradient(140deg, rgba(22,48,76,.72), rgba(16,35,56,.5));
+  border: 1px solid var(--line);
+}
+.ring { flex: 0 0 auto; width: 106px; height: 106px; position: relative; }
+.ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+.ring .ring-bg { fill: none; stroke: rgba(120,170,205,.16); stroke-width: 7; }
+.ring .ring-fg {
+  fill: none; stroke: var(--accent); stroke-width: 7; stroke-linecap: round;
+  transition: stroke-dashoffset 1s cubic-bezier(.3,0,.2,1);
+}
+.ring-label {
+  position: absolute; inset: 0; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 1px;
+}
+.ring-label b {
+  font-family: var(--serif); font-weight: 400; font-size: 31px; line-height: 1;
+  color: var(--text); font-variant-numeric: tabular-nums;
+}
+.ring-label span { font: 400 9.5px/1 var(--mono); letter-spacing: .12em; color: var(--dim); }
+.score-text { min-width: 0; }
+.score-text h2 {
+  font-family: var(--serif); font-weight: 400; font-size: clamp(24px, 6.4vw, 32px);
+  line-height: 1.1; color: var(--text); margin: 0 0 6px; text-wrap: balance;
+}
+.score-text p { margin: 0; font-size: 14.5px; color: var(--muted); }
+.score-text .who {
+  font: 500 10.5px/1 var(--mono); letter-spacing: .13em; text-transform: uppercase;
+  color: var(--accent); margin: 0 0 9px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+.breakdown { display: flex; flex-direction: column; gap: 2px; }
+.bd-row {
+  display: flex; align-items: center; gap: 13px;
+  padding: 13px 2px; border-bottom: 1px solid var(--line-soft);
+}
+.bd-row:last-child { border-bottom: 0; }
+.bd-name { flex: 1; font-size: 14.5px; color: var(--body); }
+.bd-bar { flex: 0 0 74px; height: 4px; border-radius: 2px; background: rgba(120,170,205,.15); overflow: hidden; }
+.bd-bar i { display: block; height: 100%; border-radius: 2px; background: var(--ok); }
+.bd-val {
+  flex: 0 0 auto; font: 500 13px/1 var(--mono); color: var(--text);
+  font-variant-numeric: tabular-nums; min-width: 42px; text-align: right;
+}
+
+/* ---------- correzione ---------- */
+.review { flex: 1; display: flex; flex-direction: column; gap: 14px; padding: 8px 0 30px; }
+.rev-item {
+  border: 1px solid var(--line-soft); border-radius: 13px;
+  background: rgba(16,35,56,.52); overflow: hidden;
+}
+.rev-head {
+  display: flex; align-items: flex-start; gap: 12px;
+  padding: 16px 17px 13px;
+}
+.rev-badge {
+  flex: 0 0 26px; width: 26px; height: 26px; border-radius: 50%;
+  display: grid; place-items: center; font-size: 14px; font-weight: 700; line-height: 1;
+  margin-top: 2px;
+}
+.rev-badge.yes { background: rgba(93,212,154,.16); color: var(--ok); border: 1px solid rgba(93,212,154,.5); }
+.rev-badge.no  { background: rgba(255,134,149,.13); color: var(--err); border: 1px solid rgba(255,134,149,.42); }
+.rev-q { min-width: 0; }
+.rev-q .num {
+  font: 500 10px/1 var(--mono); letter-spacing: .12em; text-transform: uppercase;
+  color: var(--dim); display: block; margin-bottom: 6px;
+}
+.rev-q h3 {
+  font-family: var(--serif); font-weight: 400; font-size: 18.5px; line-height: 1.25;
+  color: var(--text); margin: 0; text-wrap: balance;
+}
+.rev-opts { display: flex; flex-direction: column; gap: 6px; padding: 0 17px 16px; }
+.rev-opt {
+  display: flex; align-items: center; gap: 11px;
+  padding: 10px 13px; border-radius: 9px; font-size: 14.5px; line-height: 1.35;
+  background: rgba(13,27,42,.5); border: 1px solid transparent; color: var(--dim);
+}
+.rev-opt .mark {
+  flex: 0 0 18px; width: 18px; text-align: center;
+  font: 500 12px/1 var(--mono); color: inherit;
+}
+.rev-opt .tag {
+  margin-left: auto; flex: 0 0 auto;
+  font: 400 9.5px/1 var(--mono); letter-spacing: .1em; text-transform: uppercase;
+  padding: 4px 7px; border-radius: 4px; white-space: nowrap;
+}
+.rev-opt.right {
+  color: #DFFAEC; background: rgba(35,126,87,.24);
+  border-color: rgba(93,212,154,.55);
+}
+.rev-opt.right .tag { color: var(--ok); background: rgba(93,212,154,.14); }
+.rev-opt.wrong {
+  color: #FFE2E6; background: rgba(150,45,58,.22);
+  border-color: rgba(255,134,149,.45);
+}
+.rev-opt.wrong .tag { color: var(--err); background: rgba(255,134,149,.13); }
+.rev-opt.missed { border-style: dashed; }
+
+.done-note {
+  text-align: center; font: 400 12.5px/1.6 var(--sans); color: var(--dim);
+  padding: 4px 0 0;
+}
+
+/* ---------- transizioni ---------- */
+.fade { animation: fade .34s cubic-bezier(.4,0,.2,1) both; }
+@keyframes fade { from { opacity: 0; transform: translateY(9px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .001ms !important; transition-duration: .001ms !important; }
+}
+
+@media (min-width: 620px) {
+  .opt { padding: 16px 18px; font-size: 16px; }
+  .actions { padding-bottom: 22px; }
+}
+</style>
+
+<div class="shell" id="app"></div>
+
+<script>
+"use strict";
+
+/* ------------------------------------------------------------------
+   CONFIGURAZIONE
+   RESULTS_ENDPOINT: lascia "" per il funzionamento offline.
+   Se pubblichi l'app su un tuo dominio (es. GitHub Pages) puoi
+   incollare qui l'URL di una Web App Google Apps Script per
+   raccogliere i risultati in un foglio. Vedi RACCOLTA-RISULTATI.md.
+   Nota: dentro un Artifact claude.ai le chiamate esterne sono
+   bloccate dalla CSP, quindi l'invio funziona solo self-hosted.
+------------------------------------------------------------------ */
+const RESULTS_ENDPOINT = "";
+const STORAGE_KEY = "quiz-formazione-ai-v1";
+
+const QUIZ = [
+  { type: "Risposta singola", question: "Quale di queste cose NON è un LLM?",
+    answers: ["Un motore di ricerca", "Uno strumento per riassumere testi", "Un acceleratore per la creazione di bozze", "Uno strumento per riformulare contenuti"], correct: [0] },
+  { type: "Risposta singola", question: "Che cos’è un token?",
+    answers: ["L’unità minima di testo elaborata dal modello", "Un agente virtuale che controlla l’AI", "Una password per accedere a un LLM", "Un documento utilizzato per addestrare il modello"], correct: [0] },
+  { type: "Risposta singola", question: "Che cos’è un’allucinazione nel contesto degli LLM?",
+    answers: ["Una risposta lenta del modello", "Un’informazione plausibile, ma falsa, generata dal modello", "Un’immagine creata dall’AI", "Un errore di connessione a Internet"], correct: [1] },
+  { type: "Risposta singola", question: "Che cosa indica il “knowledge cutoff”?",
+    answers: ["Il numero massimo di domande che si possono fare", "La data limite delle informazioni usate per addestrare il modello", "Il costo massimo di una conversazione", "Il tempo necessario per generare una risposta"], correct: [1] },
+  { type: "Risposta singola", question: "Che cos’è la “context window”?",
+    answers: ["La quantità di testo che il modello può tenere in considerazione", "La finestra del browser in cui si apre ChatGPT", "L’archivio permanente delle conversazioni", "Il tempo massimo per scrivere un prompt"], correct: [0] },
+  { type: "Risposta singola", question: "Qual è lo scopo della pseudonimizzazione?",
+    answers: ["Sostituire i dati identificativi con nomi o codici fittizi", "Rendere il prompt più lungo", "Migliorare la velocità del modello", "Eliminare automaticamente ogni obbligo previsto dal GDPR"], correct: [0] },
+  { type: "Risposta singola", question: "Quale caratteristica rende generalmente migliore un prompt?",
+    answers: ["Essere il più lungo possibile", "Contenere contesto, obiettivo e formato desiderato", "Utilizzare esclusivamente termini tecnici", "Lasciare al modello tutte le decisioni"], correct: [1] },
+  { type: "Risposta multipla", question: "Quali informazioni non dovrebbero essere inserite in un tool AI consumer?",
+    answers: ["Un CV contenente nome e contatti del candidato", "Dati sanitari di un dipendente", "Uno schema tecnico coperto da NDA", "Una richiesta generica senza dati aziendali"], correct: [0, 1, 2] },
+  { type: "Risposta multipla", question: "Per quali attività gli LLM possono essere particolarmente utili?",
+    answers: ["Riassumere documenti", "Tradurre testi", "Creare una prima bozza", "Prendere decisioni critiche senza supervisione umana"], correct: [0, 1, 2] },
+  { type: "Risposta multipla", question: "Quali elementi possono rendere un prompt più efficace?",
+    answers: ["Il contesto", "Il formato dell’output", "Un ruolo assegnato al modello", "Informazioni lunghe ma non pertinenti"], correct: [0, 1, 2] },
+  { type: "Risposta multipla", question: "Quali sono possibili strategie per ridurre i rischi nell’uso dell’AI?",
+    answers: ["Pseudonimizzare i dati", "Utilizzare modalità senza training", "Usare versioni aziendali con un DPA", "Inserire tutti i dati nel prompt per ottenere una risposta più precisa"], correct: [0, 1, 2] },
+  { type: "Risposta multipla", question: "Quali pratiche sono indicate come proibite dall’AI Act?",
+    answers: ["Riconoscere le emozioni dei dipendenti sul posto di lavoro", "Fare social scoring delle persone", "Dedurre caratteristiche protette attraverso dati biometrici", "Riassumere un documento tecnico privo di dati sensibili"], correct: [0, 1, 2] },
+  { type: "Risposta multipla", question: "Quali comportamenti aiutano a gestire meglio la context window?",
+    answers: ["Incollare solo le parti rilevanti di un documento", "Usare sessioni separate per attività diverse", "Iniziare una nuova chat con un riassunto della sessione precedente", "Allegare sempre l’intero documento, anche quando serve una sola sezione"], correct: [0, 1, 2] },
+  { type: "Risposta multipla", question: "Quali attività possono essere affidate a un modello veloce e meno potente?",
+    answers: ["Una traduzione standard", "L’estrazione strutturata di dati", "La riformulazione di una semplice email", "Una complessa valutazione normativa con conseguenze critiche"], correct: [0, 1, 2] },
+  { type: "Vero o falso", question: "Il risultato prodotto da un’AI deve essere controllato prima di essere utilizzato.",
+    answers: ["Vero", "Falso"], correct: [0] },
+  { type: "Vero o falso", question: "Un LLM è sempre aggiornato sugli eventi e sulle normative più recenti.",
+    answers: ["Vero", "Falso"], correct: [1] },
+  { type: "Vero o falso", question: "Un LLM recupera sempre una risposta già memorizzata nel proprio database.",
+    answers: ["Vero", "Falso"], correct: [1] },
+  { type: "Vero o falso", question: "Specificare il formato desiderato può ridurre il lavoro necessario per rielaborare la risposta.",
+    answers: ["Vero", "Falso"], correct: [0] },
+  { type: "Vero o falso", question: "Pseudonimizzare un dato significa necessariamente renderlo completamente anonimo.",
+    answers: ["Vero", "Falso"], correct: [1] },
+  { type: "Vero o falso", question: "Se un’attività ripetitiva viene eseguita ogni settimana nello stesso modo, può essere più efficiente trasformarla in uno script.",
+    answers: ["Vero", "Falso"], correct: [0] }
+];
+
+const LETTERS = ["A", "B", "C", "D"];
+const app = document.getElementById("app");
+
+/* ---------------- stato ---------------- */
+const state = {
+  screen: "intro",       // intro | quiz | result | review
+  nome: "",
+  cognome: "",
+  index: 0,
+  answers: QUIZ.map(() => []),
+  startedAt: null,
+  finishedAt: null,
+  sent: false
+};
+
+function save() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) { /* modalità privata */ }
+}
+function restore() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return;
+    const prev = JSON.parse(raw);
+    if (!prev || !Array.isArray(prev.answers) || prev.answers.length !== QUIZ.length) return;
+    Object.assign(state, prev);
+  } catch (e) { /* dato illeggibile: si riparte da zero */ }
+}
+function reset() {
+  state.screen = "intro"; state.nome = ""; state.cognome = "";
+  state.index = 0; state.answers = QUIZ.map(() => []);
+  state.startedAt = null; state.finishedAt = null; state.sent = false;
+  try { localStorage.removeItem(STORAGE_KEY); } catch (e) {}
+}
+
+/* ---------------- punteggio ---------------- */
+const same = (a, b) => a.length === b.length && a.every(v => b.includes(v));
+const isRight = i => same(state.answers[i], QUIZ[i].correct);
+const score = () => QUIZ.reduce((n, _, i) => n + (isRight(i) ? 1 : 0), 0);
+
+function byType() {
+  const groups = new Map();
+  QUIZ.forEach((q, i) => {
+    const g = groups.get(q.type) || { total: 0, right: 0 };
+    g.total++; if (isRight(i)) g.right++;
+    groups.set(q.type, g);
+  });
+  return [...groups].map(([type, g]) => ({ type, ...g }));
+}
+
+function verdict(pct) {
+  if (pct >= 90) return { title: "Ottimo lavoro", note: "Padroneggi i concetti chiave del corso." };
+  if (pct >= 70) return { title: "Buon risultato", note: "Le basi ci sono: rivedi solo i punti mancati." };
+  if (pct >= 50) return { title: "Ci siamo quasi", note: "Vale la pena ripassare gli argomenti sbagliati." };
+  return { title: "Da ripassare", note: "Nessun problema: la correzione qui sotto è il ripasso." };
+}
+
+const esc = s => String(s).replace(/[&<>"']/g, c =>
+  ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+/* ---------------- invio opzionale ---------------- */
+function submitResults() {
+  if (!RESULTS_ENDPOINT || state.sent) return;
+  state.sent = true;
+  const payload = {
+    nome: state.nome,
+    cognome: state.cognome,
+    punteggio: score(),
+    totale: QUIZ.length,
+    durataSecondi: Math.round(((state.finishedAt || Date.now()) - state.startedAt) / 1000),
+    inviatoIl: new Date().toISOString(),
+    risposte: state.answers.map((sel, i) => ({
+      n: i + 1, scelte: sel.slice().sort((a, b) => a - b), corretta: isRight(i)
+    }))
+  };
+  fetch(RESULTS_ENDPOINT, {
+    method: "POST", mode: "no-cors",
+    headers: { "Content-Type": "text/plain;charset=utf-8" },
+    body: JSON.stringify(payload)
+  }).catch(() => { state.sent = false; });
+}
+
+/* ---------------- schermate ---------------- */
+function renderIntro() {
+  const multi = QUIZ.filter(q => q.correct.length > 1).length;
+  app.innerHTML = `
+    <section class="intro fade">
+      <span class="intro-mark">Formazione AI</span>
+      <div>
+        <h1>Questionario <em>finale</em></h1>
+      </div>
+      <p class="lead">Venti domande su LLM, prompting, privacy e AI Act. Alla fine vedi subito il punteggio e la correzione completa, domanda per domanda.</p>
+      <div class="meta-row">
+        <div class="meta-chip"><b>20</b><span>Domande</span></div>
+        <div class="meta-chip"><b>${multi}</b><span>A scelta multipla</span></div>
+        <div class="meta-chip"><b>~8'</b><span>Durata stimata</span></div>
+      </div>
+      <hr class="rule">
+      <div class="fields">
+        <div class="field">
+          <label for="nome">Nome</label>
+          <input id="nome" type="text" autocomplete="given-name" placeholder="Mario"
+                 enterkeyhint="next" value="${esc(state.nome)}">
+        </div>
+        <div class="field">
+          <label for="cognome">Cognome</label>
+          <input id="cognome" type="text" autocomplete="family-name" placeholder="Rossi"
+                 enterkeyhint="go" value="${esc(state.cognome)}">
+        </div>
+        <p class="field-error" id="err" role="alert"></p>
+      </div>
+      <button class="btn btn-primary btn-wide" id="start">Inizia il questionario &rarr;</button>
+      <p class="done-note">Le risposte restano su questo dispositivo. Se chiudi la pagina per sbaglio, riprendi da dove eri.</p>
+    </section>`;
+
+  const nome = document.getElementById("nome");
+  const cognome = document.getElementById("cognome");
+  const err = document.getElementById("err");
+
+  function begin() {
+    const n = nome.value.trim(), c = cognome.value.trim();
+    if (n.length < 2 || c.length < 2) {
+      err.textContent = "Scrivi nome e cognome per continuare.";
+      (n.length < 2 ? nome : cognome).focus();
+      return;
+    }
+    state.nome = n; state.cognome = c;
+    state.screen = "quiz"; state.index = 0;
+    state.startedAt = Date.now();
+    save(); render();
+  }
+  document.getElementById("start").addEventListener("click", begin);
+  [nome, cognome].forEach(el => el.addEventListener("keydown", e => {
+    if (e.key !== "Enter") return;
+    if (el === nome) cognome.focus(); else begin();
+  }));
+  nome.focus();
+}
+
+function renderQuiz() {
+  const i = state.index;
+  const q = QUIZ[i];
+  const multiple = q.correct.length > 1;
+  const selected = state.answers[i];
+  const pct = ((i + 1) / QUIZ.length) * 100;
+
+  app.innerHTML = `
+    <header class="topbar">
+      <div class="topbar-line">
+        <span class="kind">${esc(q.type)}</span>
+        <span class="count"><b>${String(i + 1).padStart(2, "0")}</b> / ${QUIZ.length}</span>
+      </div>
+      <div class="track"><div class="track-fill" id="fill"></div></div>
+    </header>
+
+    <section class="qbody fade">
+      <h2 class="question">${esc(q.question)}</h2>
+      ${multiple ? `<p class="hint">Seleziona tutte le risposte corrette (${q.correct.length}).</p>` : ""}
+      <div class="options" role="group" aria-label="Opzioni di risposta">
+        ${q.answers.map((a, k) => `
+          <button type="button" class="opt" data-k="${k}" aria-pressed="${selected.includes(k)}">
+            <span class="letter" aria-hidden="true">${LETTERS[k]}</span>
+            <span>${esc(a)}</span>
+          </button>`).join("")}
+      </div>
+    </section>
+
+    <div class="actions">
+      <button class="btn btn-ghost" id="prev" ${i === 0 ? "disabled" : ""}>&larr; Indietro</button>
+      <button class="btn btn-primary" id="next" ${selected.length === 0 ? "disabled" : ""}>
+        ${i === QUIZ.length - 1 ? "Vedi il risultato" : "Avanti &rarr;"}
+      </button>
+    </div>`;
+
+  requestAnimationFrame(() => {
+    const fill = document.getElementById("fill");
+    if (fill) fill.style.width = pct + "%";
+  });
+
+  const next = document.getElementById("next");
+
+  app.querySelectorAll(".opt").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const k = Number(btn.dataset.k);
+      const sel = state.answers[i];
+      if (multiple) {
+        const at = sel.indexOf(k);
+        if (at > -1) sel.splice(at, 1); else sel.push(k);
+        app.querySelectorAll(".opt").forEach(b =>
+          b.setAttribute("aria-pressed", sel.includes(Number(b.dataset.k))));
+      } else {
+        state.answers[i] = [k];
+        app.querySelectorAll(".opt").forEach(b =>
+          b.setAttribute("aria-pressed", Number(b.dataset.k) === k));
+      }
+      next.disabled = state.answers[i].length === 0;
+      save();
+      // risposta singola: avanza da sola, il tocco è già una conferma.
+      // Il controllo su state.index evita il doppio avanzamento se
+      // nel frattempo si tocca anche "Avanti".
+      if (!multiple) setTimeout(() => { if (state.index === i) goNext(); }, 340);
+    });
+  });
+
+  function goNext() {
+    if (state.index !== i) return;
+    if (state.answers[state.index].length === 0) return;
+    if (state.index < QUIZ.length - 1) { state.index++; }
+    else { state.screen = "result"; state.finishedAt = Date.now(); submitResults(); }
+    save(); render();
+  }
+  next.addEventListener("click", goNext);
+  document.getElementById("prev").addEventListener("click", () => {
+    if (state.index > 0) { state.index--; save(); render(); }
+  });
+}
+
+function renderResult() {
+  const right = score();
+  const pct = Math.round((right / QUIZ.length) * 100);
+  const v = verdict(pct);
+  const secs = state.startedAt && state.finishedAt
+    ? Math.max(1, Math.round((state.finishedAt - state.startedAt) / 1000)) : null;
+  const dur = secs ? `${Math.floor(secs / 60)} min ${String(secs % 60).padStart(2, "0")} s` : null;
+  const R = 46, C = 2 * Math.PI * R;
+
+  app.innerHTML = `
+    <section class="result fade">
+      <div class="score-card">
+        <div class="ring">
+          <svg viewBox="0 0 106 106" aria-hidden="true">
+            <circle class="ring-bg" cx="53" cy="53" r="${R}"></circle>
+            <circle class="ring-fg" id="arc" cx="53" cy="53" r="${R}"
+                    stroke-dasharray="${C.toFixed(1)}" stroke-dashoffset="${C.toFixed(1)}"></circle>
+          </svg>
+          <div class="ring-label"><b>${right}<span style="font-size:17px;color:var(--dim)">/${QUIZ.length}</span></b><span>Corrette</span></div>
+        </div>
+        <div class="score-text">
+          <p class="who">${esc(state.nome)} ${esc(state.cognome)}</p>
+          <h2>${v.title}</h2>
+          <p>${pct}% di risposte esatte${dur ? ` &middot; ${dur}` : ""}. ${v.note}</p>
+        </div>
+      </div>
+
+      <div>
+        <span class="eyebrow">Per tipologia</span>
+        <div class="breakdown">
+          ${byType().map(g => `
+            <div class="bd-row">
+              <span class="bd-name">${esc(g.type)}</span>
+              <span class="bd-bar"><i style="width:${(g.right / g.total) * 100}%"></i></span>
+              <span class="bd-val">${g.right}/${g.total}</span>
+            </div>`).join("")}
+        </div>
+      </div>
+
+      <div class="actions" style="position:static;background:none;padding-bottom:0">
+        <button class="btn btn-primary btn-wide" id="toReview">Vedi la correzione</button>
+      </div>
+      <button class="btn btn-ghost btn-wide" id="again">Rifai il questionario</button>
+      <p class="done-note">Tieni aperta questa schermata: la correzione si commenta insieme in aula.</p>
+    </section>`;
+
+  requestAnimationFrame(() => {
+    const arc = document.getElementById("arc");
+    if (arc) arc.style.strokeDashoffset = String(C * (1 - right / QUIZ.length));
+  });
+
+  document.getElementById("toReview").addEventListener("click", () => {
+    state.screen = "review"; save(); render(); window.scrollTo(0, 0);
+  });
+  document.getElementById("again").addEventListener("click", () => { reset(); render(); });
+}
+
+function renderReview() {
+  const right = score();
+  app.innerHTML = `
+    <header class="topbar">
+      <div class="topbar-line">
+        <span class="kind">Correzione</span>
+        <span class="count"><b>${right}</b> / ${QUIZ.length} corrette</span>
+      </div>
+      <div class="track"><div class="track-fill" style="width:${(right / QUIZ.length) * 100}%"></div></div>
+    </header>
+
+    <section class="review fade">
+      ${QUIZ.map((q, i) => {
+        const sel = state.answers[i];
+        const ok = isRight(i);
+        return `
+        <article class="rev-item">
+          <div class="rev-head">
+            <span class="rev-badge ${ok ? "yes" : "no"}" aria-label="${ok ? "Corretta" : "Sbagliata"}">${ok ? "✓" : "✕"}</span>
+            <div class="rev-q">
+              <span class="num">Domanda ${String(i + 1).padStart(2, "0")} &middot; ${esc(q.type)}</span>
+              <h3>${esc(q.question)}</h3>
+            </div>
+          </div>
+          <div class="rev-opts">
+            ${q.answers.map((a, k) => {
+              const isCorrect = q.correct.includes(k);
+              const chosen = sel.includes(k);
+              let cls = "", mark = "", tag = "";
+              if (isCorrect) {
+                cls = "right" + (chosen ? "" : " missed");
+                mark = "✓";
+                tag = chosen ? "Tua risposta" : "Mancata";
+              } else if (chosen) {
+                cls = "wrong"; mark = "✕"; tag = "Tua risposta";
+              } else {
+                mark = LETTERS[k];
+              }
+              return `<div class="rev-opt ${cls}">
+                <span class="mark" aria-hidden="true">${mark}</span>
+                <span>${esc(a)}</span>
+                ${tag ? `<span class="tag">${tag}</span>` : ""}
+              </div>`;
+            }).join("")}
+          </div>
+        </article>`;
+      }).join("")}
+
+      <div class="actions" style="position:static;background:none">
+        <button class="btn btn-ghost btn-wide" id="back">&larr; Torna al punteggio</button>
+      </div>
+    </section>`;
+
+  document.getElementById("back").addEventListener("click", () => {
+    state.screen = "result"; save(); render(); window.scrollTo(0, 0);
+  });
+}
+
+function render() {
+  if (state.screen === "quiz") renderQuiz();
+  else if (state.screen === "result") renderResult();
+  else if (state.screen === "review") renderReview();
+  else renderIntro();
+}
+
+restore();
+render();
+</script>
+</body>
+</html>
