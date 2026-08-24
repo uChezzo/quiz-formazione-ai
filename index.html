@@ -197,6 +197,32 @@ button { font: inherit; color: inherit; }
   transition: width .38s cubic-bezier(.4,0,.2,1);
 }
 
+/* ---------- apertura di sezione ---------- */
+.secscreen {
+  flex: 1; display: flex; flex-direction: column; justify-content: center;
+  gap: 13px; padding: 30px 0 40px;
+}
+.sec-num {
+  font-family: var(--serif); font-weight: 400;
+  font-size: clamp(64px, 21vw, 108px); line-height: .82;
+  color: rgba(0,200,240,.26); letter-spacing: -.02em;
+  font-variant-numeric: tabular-nums;
+}
+.sec-title {
+  font-family: var(--serif); font-weight: 400;
+  font-size: clamp(31px, 8.4vw, 46px); line-height: 1.05;
+  color: var(--text); margin: 0; text-wrap: balance;
+}
+.sec-note {
+  margin: 0; color: var(--muted); max-width: 38ch;
+  font-size: clamp(15px, 4vw, 17.5px);
+}
+.sec-count {
+  margin: 9px 0 0; padding-top: 15px; border-top: 1px solid var(--line-soft);
+  font: 400 11px/1.4 var(--mono); letter-spacing: .11em;
+  text-transform: uppercase; color: var(--dim);
+}
+
 /* ---------- domanda ---------- */
 .qbody {
   flex: 1; display: flex; flex-direction: column; gap: 20px;
@@ -431,6 +457,37 @@ const QUIZ = [
 const LETTERS = ["A", "B", "C", "D"];
 const app = document.getElementById("app");
 
+/* ---------------- sezioni ----------------
+   Le sezioni sono i blocchi consecutivi di domande dello stesso tipo,
+   ricavati dai dati: non c'è una lista da tenere allineata a mano. */
+const SECTIONS = QUIZ.reduce((acc, q, i) => {
+  const last = acc[acc.length - 1];
+  if (last && last.type === q.type) { last.end = i; last.count++; }
+  else acc.push({ type: q.type, start: i, end: i, count: 1 });
+  return acc;
+}, []);
+const sectionOf = i => SECTIONS.findIndex(s => i >= s.start && i <= s.end);
+
+const SECTION_NOTE = {
+  "Risposta singola":  "Una sola risposta corretta per ogni domanda.",
+  "Risposta multipla": "Più risposte corrette per ogni domanda: selezionale tutte prima di andare avanti.",
+  "Vero o falso":      "Decidi se l’affermazione è vera o falsa."
+};
+
+/* ---------------- barra di progresso ----------------
+   Riparte dalla posizione precedente, così cresce solo del tratto
+   appena percorso invece di rianimarsi da zero a ogni schermata. */
+let lastPct = null;
+function track(pct) {
+  const from = lastPct === null ? pct : lastPct;
+  lastPct = pct;
+  requestAnimationFrame(() => {
+    const fill = document.getElementById("fill");
+    if (fill) fill.style.width = pct + "%";
+  });
+  return `<div class="track"><div class="track-fill" id="fill" style="width:${from}%"></div></div>`;
+}
+
 /* ---------------- stato ---------------- */
 const state = {
   screen: "intro",       // intro | quiz | result | review
@@ -459,6 +516,7 @@ function reset() {
   state.screen = "intro"; state.nome = ""; state.cognome = "";
   state.index = 0; state.answers = QUIZ.map(() => []);
   state.startedAt = null; state.finishedAt = null; state.sent = false;
+  lastPct = null;
   try { localStorage.removeItem(STORAGE_KEY); } catch (e) {}
 }
 
@@ -475,13 +533,6 @@ function byType() {
     groups.set(q.type, g);
   });
   return [...groups].map(([type, g]) => ({ type, ...g }));
-}
-
-function verdict(pct) {
-  if (pct >= 90) return { title: "Ottimo lavoro", note: "Padroneggi i concetti chiave del corso." };
-  if (pct >= 70) return { title: "Buon risultato", note: "Le basi ci sono: rivedi solo i punti mancati." };
-  if (pct >= 50) return { title: "Ci siamo quasi", note: "Vale la pena ripassare gli argomenti sbagliati." };
-  return { title: "Da ripassare", note: "Nessun problema: la correzione qui sotto è il ripasso." };
 }
 
 const esc = s => String(s).replace(/[&<>"']/g, c =>
@@ -518,7 +569,7 @@ function renderIntro() {
       <div>
         <h1>Questionario <em>finale</em></h1>
       </div>
-      <p class="lead">Venti domande su LLM, prompting, privacy e AI Act. Alla fine vedi subito il punteggio e la correzione completa, domanda per domanda.</p>
+      <p class="lead">Venti domande su LLM, prompting, privacy e AI Act, in tre sezioni. Alla fine vedi subito il punteggio e la correzione completa, domanda per domanda.</p>
       <div class="meta-row">
         <div class="meta-chip"><b>20</b><span>Domande</span></div>
         <div class="meta-chip"><b>${multi}</b><span>A scelta multipla</span></div>
@@ -554,7 +605,7 @@ function renderIntro() {
       return;
     }
     state.nome = n; state.cognome = c;
-    state.screen = "quiz"; state.index = 0;
+    state.screen = "section"; state.index = 0;
     state.startedAt = Date.now();
     save(); render();
   }
@@ -579,7 +630,7 @@ function renderQuiz() {
         <span class="kind">${esc(q.type)}</span>
         <span class="count"><b>${String(i + 1).padStart(2, "0")}</b> / ${QUIZ.length}</span>
       </div>
-      <div class="track"><div class="track-fill" id="fill"></div></div>
+      ${track(pct)}
     </header>
 
     <section class="qbody fade">
@@ -601,11 +652,6 @@ function renderQuiz() {
       </button>
     </div>`;
 
-  requestAnimationFrame(() => {
-    const fill = document.getElementById("fill");
-    if (fill) fill.style.width = pct + "%";
-  });
-
   const next = document.getElementById("next");
 
   app.querySelectorAll(".opt").forEach(btn => {
@@ -624,18 +670,19 @@ function renderQuiz() {
       }
       next.disabled = state.answers[i].length === 0;
       save();
-      // risposta singola: avanza da sola, il tocco è già una conferma.
-      // Il controllo su state.index evita il doppio avanzamento se
-      // nel frattempo si tocca anche "Avanti".
-      if (!multiple) setTimeout(() => { if (state.index === i) goNext(); }, 340);
     });
   });
 
   function goNext() {
     if (state.index !== i) return;
-    if (state.answers[state.index].length === 0) return;
-    if (state.index < QUIZ.length - 1) { state.index++; }
-    else { state.screen = "result"; state.finishedAt = Date.now(); submitResults(); }
+    if (state.answers[i].length === 0) return;
+    if (i < QUIZ.length - 1) {
+      state.index = i + 1;
+      // cambio di tipologia: prima si annuncia la nuova sezione
+      if (sectionOf(i + 1) !== sectionOf(i)) state.screen = "section";
+    } else {
+      state.screen = "result"; state.finishedAt = Date.now(); submitResults();
+    }
     save(); render();
   }
   next.addEventListener("click", goNext);
@@ -644,13 +691,41 @@ function renderQuiz() {
   });
 }
 
+function renderSection() {
+  const n = sectionOf(state.index);
+  const s = SECTIONS[n];
+  // sulla schermata di sezione la barra mostra le domande già chiuse
+  const pct = (state.index / QUIZ.length) * 100;
+
+  app.innerHTML = `
+    <header class="topbar">
+      <div class="topbar-line">
+        <span class="kind">Sezione ${n + 1} di ${SECTIONS.length}</span>
+        <span class="count"><b>${String(state.index).padStart(2, "0")}</b> / ${QUIZ.length}</span>
+      </div>
+      ${track(pct)}
+    </header>
+
+    <section class="secscreen fade">
+      <span class="sec-num" aria-hidden="true">${String(n + 1).padStart(2, "0")}</span>
+      <h2 class="sec-title">${esc(s.type)}</h2>
+      <p class="sec-note">${esc(SECTION_NOTE[s.type] || "")}</p>
+      <p class="sec-count">${s.count} domande &middot; dalla ${s.start + 1} alla ${s.end + 1}</p>
+    </section>
+
+    <div class="actions">
+      <button class="btn btn-primary btn-wide" id="go">
+        ${n === 0 ? "Inizia" : "Continua"} &rarr;
+      </button>
+    </div>`;
+
+  document.getElementById("go").addEventListener("click", () => {
+    state.screen = "quiz"; save(); render(); window.scrollTo(0, 0);
+  });
+}
+
 function renderResult() {
   const right = score();
-  const pct = Math.round((right / QUIZ.length) * 100);
-  const v = verdict(pct);
-  const secs = state.startedAt && state.finishedAt
-    ? Math.max(1, Math.round((state.finishedAt - state.startedAt) / 1000)) : null;
-  const dur = secs ? `${Math.floor(secs / 60)} min ${String(secs % 60).padStart(2, "0")} s` : null;
   const R = 46, C = 2 * Math.PI * R;
 
   app.innerHTML = `
@@ -662,12 +737,11 @@ function renderResult() {
             <circle class="ring-fg" id="arc" cx="53" cy="53" r="${R}"
                     stroke-dasharray="${C.toFixed(1)}" stroke-dashoffset="${C.toFixed(1)}"></circle>
           </svg>
-          <div class="ring-label"><b>${right}<span style="font-size:17px;color:var(--dim)">/${QUIZ.length}</span></b><span>Corrette</span></div>
+          <div class="ring-label"><b>${right}</b><span>su ${QUIZ.length}</span></div>
         </div>
         <div class="score-text">
           <p class="who">${esc(state.nome)} ${esc(state.cognome)}</p>
-          <h2>${v.title}</h2>
-          <p>${pct}% di risposte esatte${dur ? ` &middot; ${dur}` : ""}. ${v.note}</p>
+          <h2>Risposte esatte</h2>
         </div>
       </div>
 
@@ -760,7 +834,8 @@ function renderReview() {
 }
 
 function render() {
-  if (state.screen === "quiz") renderQuiz();
+  if (state.screen === "section") renderSection();
+  else if (state.screen === "quiz") renderQuiz();
   else if (state.screen === "result") renderResult();
   else if (state.screen === "review") renderReview();
   else renderIntro();
